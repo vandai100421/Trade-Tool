@@ -1,0 +1,28 @@
+# 📱 APP TÍN HIỆU GIAO DỊCH — TÀI LIỆU DỰ ÁN CHO OPENCODE
+
+## 1. TỔNG QUAN DỰ ÁN
+- **Tên app:** Trading Signals
+- **Mục tiêu:** App mobile (Flutter) hỗ trợ trader nghiệp dư ra quyết định giao dịch. App chỉ đóng vai trò "cái còi" — phát tín hiệu MUA/BÁN/CHỜ, KHÔNG xử lý lệnh, KHÔNG quản lý tài khoản.
+- **Người dùng:** 1 trader nghiệp dư, giao dịch 3 cặp: BTC/USDT, XAU/USD (Vàng), EUR/USD.
+- **Yêu cầu đặc biệt:**
+  - KHÔNG yêu cầu đăng nhập — mở app là dùng được ngay.
+  - KHÔNG cần backend server — lưu local trên điện thoại (Hive).
+  - Gửi email (Resend API) khi có tín hiệu "ĐẸP" (5/5 điều kiện + ADX > 30 + Multi-timeframe đồng ý).
+  - Không dùng Expo (chọn Flutter thuần).
+
+## 2. TECH STACK
+- **Framework:** Flutter (Dart)
+- **State management:** Riverpod
+- **Charts:** Syncfusion Flutter Charts (Candlestick)
+- **Local storage:** Hive (lưu settings, API key)
+- **HTTP client:** Dio
+- **WebSocket:** web_socket_channel (realtime price cho BTC)
+- **Push notification:** flutter_local_notifications
+- **Email service:** Resend API (gửi email khi tín hiệu ĐẸP)
+
+### Nguồn dữ liệu giá
+- **BTC/USDT:** Binance API (WebSocket realtime không giới hạn + REST lấy lịch sử). Không cần API key.
+- **XAU/USD & EUR/USD:** Twelve Data API (REST, polling 30 giây). Free 800 req/ngày. Cần API key.
+
+## 3. KIẾN TRÚC & CẤU TRÚC THƯ MỤC
+Không có backend server. App gọi trực tiếp API và lưu local.
