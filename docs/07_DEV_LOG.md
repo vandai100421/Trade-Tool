@@ -107,3 +107,42 @@
 - App vẫn thuần client-side, Vercel chỉ chạy `/api/email` làm serverless function.
 - localStorage KHÔNG đồng bộ laptop↔iPhone → nhập lại settings 1 lần trên iPhone.
 - Notification iOS chỉ chạy trong PWA (Add to Home Screen), không push background.
+
+---
+
+## Session 4 — Background Signal Monitoring (Telegram + GitHub Actions Cron)
+
+**Ngày:** 2026-07-14
+
+### Yêu cầu thay đổi
+- PWA chỉ chạy khi mở → không phát tín hiệu khi phone đóng.
+- User muốn nhận tín hiệu Telegram native push khi không dùng app.
+- Cron 15 phút.
+
+### Đã làm
+
+#### Server-side signal detection
+- **`src/lib/telegramApi.ts`**: `sendTelegramMessage()` — native fetch Telegram Bot API, HTML parse mode, format signal (emoji + conditions + ADX/MTF + SL/TP).
+- **`src/lib/serverStorage.ts`**: cooldown + candle cache qua `@vercel/kv`. `isOnCooldownServer()` (15ph, reset khi đổi chiều), `getCachedCandles()`/`setCachedCandles()` với TTL. Graceful degradation khi KV chưa cấu hình.
+- **`src/lib/serverCandleFetch.ts`**: `fetchCandlesForSignal()` — fetch 3 timeframes (15m/1H/4H). 15m fresh mỗi run, 1H cache 1h, 4H cache 4h. Reuse `fetchBinanceKlines` (BTC), standalone Twelve Data fetch (XAU/EUR).
+- **`src/app/api/check-signals/route.ts`**: cron endpoint — auth `x-cron-secret`, loop 3 pairs → `computeSignal()` (reuse 100% từ signalEngine) → check cooldown → if actionable → `sendTelegramMessage()`. `maxDuration=60`, `runtime=nodejs`.
+
+#### Cron schedule
+- **`.github/workflows/signals.yml`**: GitHub Actions `schedule: '*/15 * * * *'` + `workflow_dispatch` (manual trigger). curl POST `/api/check-signals` với `CRON_SECRET`.
+
+#### Quota optimization
+- Cache 1H/4H trong KV → ~252 req/ngày Twelve Data (thay vì 576 nếu fetch fresh tất cả).
+- BTC dùng Binance (free) → không tốn quota.
+
+### Verification
+- `npm run typecheck` — PASS (0 errors)
+- `npm run lint` — PASS (0 warnings)
+- `npm run build` — PASS (7 pages, `/api/check-signals` + `/api/email` serverless)
+
+### Setup user cần làm
+1. Tạo Telegram bot (BotFather) → lấy BOT_TOKEN + CHAT_ID.
+2. Tạo Vercel KV → tự thêm env vars.
+3. Thêm Vercel env vars: `TWELVE_DATA_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `CRON_SECRET`.
+4. Thêm GitHub Secrets: `VERCEL_URL`, `CRON_SECRET`.
+5. Test: Actions → Run workflow.
+Xem chi tiết: `docs/DEPLOY.md` (mục Background Monitoring).

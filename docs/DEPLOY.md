@@ -92,3 +92,69 @@ git push origin main
 | Không nhận email | Resend key sai / email chưa verify | Check Vercel env var + verify email trên Resend |
 | XAU/EUR không có data | Thiếu Twelve Data key | Settings → nhập key |
 | Quota Twelve Data hết | > 800 req/ngày | Đợi qua ngày hôm sau, hoặc nâng plan |
+
+---
+
+## Background Monitoring — Telegram + GitHub Actions Cron
+
+PWA chỉ chạy khi mở. Để nhận tín hiệu khi phone đóng, server-side cron (GitHub Actions 15ph) → `/api/check-signals` → gửi Telegram.
+
+### Bước T1 — Tạo Telegram Bot
+
+1. Mở Telegram → tìm **@BotFather** → `/newbot`.
+2. Đặt tên + username (kết thúc bằng `bot`) → nhận **BOT_TOKEN** (vd `123456:ABC-DEF...`).
+3. Mở chat với bot mới → gửi 1 tin nhắn bất kỳ (bắt buộc để bot có thể reply).
+4. Lấy **CHAT_ID**: mở `https://api.telegram.org/bot<TOKEN>/getUpdates` → tìm `"chat":{"id":123456789}`.
+5. Test: mở `https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=<ID>&text=hello` → Telegram nhận tin nhắn.
+
+### Bước T2 — Tạo Vercel KV (cho cooldown + cache)
+
+1. Vercel dashboard → Project → **Storage** tab → **Create** → **KV**.
+2. Đặt tên → **Connect to Project**.
+3. Vercel tự thêm 2 env vars: `KV_REST_API_URL` + `KV_REST_API_TOKEN`.
+4. **Redeploy** project để env vars có hiệu lực.
+
+### Bước T3 — Thêm Environment Variables trên Vercel
+
+Vercel → Project → Settings → Environment Variables → thêm:
+
+| Name | Value | Dùng cho |
+|---|---|---|
+| `TWELVE_DATA_API_KEY` | (key Twelve Data của bạn) | Cron fetch XAU/EUR candles |
+| `TELEGRAM_BOT_TOKEN` | `123456:ABC-DEF...` | Gửi Telegram message |
+| `TELEGRAM_CHAT_ID` | `123456789` | Chat nhận tin nhắn |
+| `CRON_SECRET` | (chuỗi random, vd `mySecret123`) | Auth cho GitHub Actions gọi API |
+
+> `KV_REST_API_URL` + `KV_REST_API_TOKEN` tự có sau Bước T2.
+
+### Bước T4 — Thêm GitHub Secrets
+
+Repo GitHub → Settings → Secrets and variables → Actions → **New repository secret**:
+
+| Name | Value |
+|---|---|
+| `VERCEL_URL` | `https://trade-tool.vercel.app` (URL Vercel của bạn, không có `/` cuối) |
+| `CRON_SECRET` | (cùng giá trị với `CRON_SECRET` trên Vercel) |
+
+### Bước T5 — Test cron
+
+1. Repo GitHub → tab **Actions** → **Trading Signals Cron**.
+2. **Run workflow** (nút phải, `workflow_dispatch`) → Run main.
+3. Xem log: HTTP 200 + JSON response với 3 pairs.
+4. Nếu có tín hiệu BUY/SELL → Telegram nhận tin nhắn.
+
+> Sau đó cron tự chạy mỗi 15 phút (schedule). GitHub Actions free tier: 2000 min/tháng, mỗi run ~5s → dư sức.
+
+### Tối ưu quota (đã build sẵn)
+
+- 15m candles: fetch fresh mỗi run (cần realtime).
+- 1H candles: cache 1 giờ trong KV (refetch khi stale).
+- 4H candles: cache 4 giờ trong KV.
+- BTC dùng Binance (free, không tốn quota).
+- Tiêu thụ ~252 req/ngày Twelve Data (thay vì 576) → dư ~548 cho client-side.
+
+### Lưu ý
+
+- **Cooldown server-side độc lập** client-side (KV vs localStorage). Tránh spam, chấp nhận duplicate khi user đang mở app + cron chạy cùng lúc.
+- **Telegram native push**: nhận tức thì trên iPhone kể cả khi app đóng (Telegram app native).
+- Nếu thấy duplicate notification khi mở app → tắt "Web notification" trong Settings, chỉ dùng Telegram.
