@@ -2,7 +2,22 @@ node_modules/
 .next/
 out/
 build/
-.env.local
-.env*.local
+
+# Environment variables (KHÔNG bao giờ commit)
+.env
+.env.*
+!.env.local.example
+
+# TypeScript / build artifacts
 *.tsbuildinfo
 next-env.d.ts
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

@@ -19,12 +19,37 @@ export async function showSignalNotification(signal: Signal): Promise<void> {
 
   const title = buildTitle(signal);
   const body = buildBody(signal);
-
-  new Notification(title, {
+  const options: NotificationOptions = {
     body,
-    icon: '/favicon.ico',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
     tag: signal.pair,
-  });
+  };
+
+  const swReg = await getServiceWorkerRegistration();
+  if (swReg) {
+    await swReg.showNotification(title, options);
+  } else {
+    try {
+      new Notification(title, options);
+    } catch {
+      // Trên mobile (iOS) constructor throw TypeError khi không có service worker
+      // → câm lặng, SW sẽ được đăng ký lại sau
+    }
+  }
+}
+
+async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+    return null;
+  }
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) return reg;
+    return await navigator.serviceWorker.register('/sw.js');
+  } catch {
+    return null;
+  }
 }
 
 function buildTitle(signal: Signal): string {

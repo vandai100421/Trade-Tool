@@ -70,3 +70,40 @@
 2. `npm run dev` → mở `http://localhost:3000`.
 3. Vào Settings → nhập Twelve Data API key → Save.
 4. Quay lại Home → dùng app.
+
+---
+
+## Session 3 — Deploy Vercel + PWA cho iPhone
+
+**Ngày:** 2026-07-14
+
+### Yêu cầu thay đổi
+- User muốn dùng app trên iPhone khi không ở nhà, không cần bật laptop.
+- Cần deploy serverless + cài như app native trên iOS.
+
+### Đã làm
+
+#### Bảo mật repo
+- Sửa `.gitignore`: thêm `.env` + `.env.*` (trước đó chỉ ignore `.env.local`, file `.env` chứa LLM key untracked → nguy cơ lộ key).
+- Verify `.env.local.example` (file mẫu) vẫn được commit.
+
+#### PWA support (Phase 1 + 2)
+- **`src/lib/notifications.ts`**: refactor `showSignalNotification` — dùng `ServiceWorkerRegistration.showNotification()` (MDN khuyến nghị cho mobile), fallback `new Notification()` cho desktop. Trước đó dùng constructor trực tiếp → throw `TypeError` trên iOS.
+- **`public/sw.js`**: service worker tối giản — precache shell, runtime cache GET, `notificationclick` focus app.
+- **`src/components/ServiceWorkerRegister.tsx`**: client component đăng ký SW (chỉ production), mount vào `layout.tsx`.
+- **`src/app/manifest.ts`**: Next.js manifest convention — name, theme_color `#0D1117`, display `standalone`, icons.
+- **`public/icon.svg`** + script `sharp` generate: `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`, `favicon-32.png`.
+- **`src/app/layout.tsx`**: thêm metadata `manifest`, `appleWebApp`, `icons`.
+
+#### Tài liệu
+- Tạo `docs/DEPLOY.md` — hướng dẫn deploy Vercel + cài PWA lên iPhone + troubleshooting.
+
+### Verification
+- `npm run typecheck` — PASS (0 errors)
+- `npm run lint` — PASS (0 warnings)
+- `npm run build` — PASS (7 pages, `/manifest.webmanifest` route, `/api/email` serverless)
+
+### Lưu ý kiến trúc
+- App vẫn thuần client-side, Vercel chỉ chạy `/api/email` làm serverless function.
+- localStorage KHÔNG đồng bộ laptop↔iPhone → nhập lại settings 1 lần trên iPhone.
+- Notification iOS chỉ chạy trong PWA (Add to Home Screen), không push background.

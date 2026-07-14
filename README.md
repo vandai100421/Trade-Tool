@@ -10,7 +10,8 @@ App đóng vai trò "cái còi" — chỉ phát tín hiệu, **KHÔNG** xử lý
 - **Signal Engine** — 5 điều kiện + ADX + Multi-timeframe (15m / 1H / 4H)
 - **Trend Matrix** — phân tích trend 3 lớp (ngắn hạn / trung hạn / dài hạn)
 - **Biểu đồ nến** — Candlestick + EMA20/EMA50 (lightweight-charts)
-- **Thông báo** — Web Notification khi có tín hiệu BUY/SELL
+- **PWA** — cài lên màn hình iPhone (Add to Home Screen), nhận Web Notification
+- **Thông báo** — Web Notification khi có tín hiệu BUY/SELL (qua service worker)
 - **Email** — gửi email khi tín hiệu "ĐẸP" (5/5 + ADX>30 + MTF)
 - **Stop-loss / Take-profit** — gợi ý dựa trên ATR
 - **API quota tracking** — theo dõi Twelve Data usage
@@ -42,7 +43,7 @@ App đóng vai trò "cái còi" — chỉ phát tín hiệu, **KHÔNG** xử lý
 - Node.js >= 18.17
 - npm >= 9
 
-### Các bước
+### Chạy local (dev)
 
 ```bash
 # 1. Clone project
@@ -61,6 +62,16 @@ npm run dev
 ```
 
 Mở `http://localhost:3000`.
+
+### Deploy lên Vercel (dùng trên iPhone)
+
+Xem hướng dẫn chi tiết: [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
+Tóm tắt:
+1. Push code lên GitHub.
+2. Vercel → Import repo → set `RESEND_API_KEY` env var → Deploy.
+3. Mở URL Vercel bằng Safari → **Add to Home Screen** → cài như app.
+4. Vào Settings nhập lại Twelve Data key + email (localStorage mỗi browser riêng).
 
 ### Lấy API keys
 

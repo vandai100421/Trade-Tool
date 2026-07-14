@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0D1117"/>
+  <rect x="48" y="48" width="416" height="416" rx="72" fill="#161B22" stroke="#21262D" stroke-width="4"/>
+  <polyline points="96,360 176,260 240,300 320,170 416,210"
+            fill="none" stroke="#22C55E" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="416" cy="210" r="16" fill="#22C55E"/>
+  <text x="256" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#F9FAFB">SIGNALS</text>
+</svg>
